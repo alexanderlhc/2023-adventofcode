@@ -13,123 +13,86 @@ fn main() {
     println!("Total sum: {}", total_sum);
 }
 
+const NUMBERS: [&str; 10] = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+];
+
 #[derive(Debug, PartialEq)]
 struct FirstLast {
     first: u32,
     last: u32,
 }
 
-#[derive(Debug, PartialEq)]
-enum WordNumberStatus {
-    NotNumber,
-    PartialNumber,
-    Number(u32),
-}
+fn first_and_last_number(line: String) -> FirstLast {
+    let first: Option<u32> = find_first(&line);
+    let last: Option<u32> = find_last(&line);
 
-fn word_is_number_or_part_of(word: &str) -> WordNumberStatus {
-    let numbers = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-    ];
-
-    for (i, number) in numbers.iter().enumerate() {
-        if word == *number {
-            return WordNumberStatus::Number((i + 1) as u32);
-        }
-        if number.starts_with(word) {
-            return WordNumberStatus::PartialNumber;
-        }
-    }
-
-    return WordNumberStatus::NotNumber;
+    return FirstLast {
+        first: first.unwrap_or(0),
+        last: last.unwrap_or(0),
+    };
 }
 
 #[test]
-fn test_word_is_number_or_part_of() {
-    assert_eq!(
-        word_is_number_or_part_of("one"),
-        WordNumberStatus::Number(1)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("onehundred"),
-        WordNumberStatus::NotNumber
-    );
-    assert_eq!(
-        word_is_number_or_part_of("onehundredone"),
-        WordNumberStatus::NotNumber
-    );
-    assert_eq!(
-        word_is_number_or_part_of("two"),
-        WordNumberStatus::Number(2)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("three"),
-        WordNumberStatus::Number(3)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("four"),
-        WordNumberStatus::Number(4)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("five"),
-        WordNumberStatus::Number(5)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("six"),
-        WordNumberStatus::Number(6)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("seven"),
-        WordNumberStatus::Number(7)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("eight"),
-        WordNumberStatus::Number(8)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("nine"),
-        WordNumberStatus::Number(9)
-    );
-    assert_eq!(
-        word_is_number_or_part_of("ten"),
-        WordNumberStatus::Number(10)
-    );
+fn test_next_word_is_number() {
+    assert_eq!(next_word_is_number(&"one".to_string()), Some(1));
+    assert_eq!(next_word_is_number(&"two".to_string()), Some(2));
+    assert_eq!(next_word_is_number(&"three".to_string()), Some(3));
+    assert_eq!(next_word_is_number(&"four".to_string()), Some(4));
+    assert_eq!(next_word_is_number(&"five".to_string()), Some(5));
+    assert_eq!(next_word_is_number(&"six".to_string()), Some(6));
+    assert_eq!(next_word_is_number(&"seven".to_string()), Some(7));
+    assert_eq!(next_word_is_number(&"eight".to_string()), Some(8));
+    assert_eq!(next_word_is_number(&"nine".to_string()), Some(9));
+    assert_eq!(next_word_is_number(&"ten".to_string()), Some(10));
+    assert_eq!(next_word_is_number(&"onetwo".to_string()), Some(1));
+    assert_eq!(next_word_is_number(&"two2".to_string()), Some(2));
 }
 
-fn first_and_last_number(line: String) -> FirstLast {
-    let mut first: u32 = 0;
-    let mut last: u32 = 0;
-    let mut word = String::new();
-
-    for (_i, c) in line.chars().enumerate() {
-        word.push(c);
-        println!("{} {} {}", line, c, word);
-        let is_number_or_part_of = word_is_number_or_part_of(word.as_str());
-
-        match is_number_or_part_of {
-            WordNumberStatus::NotNumber => {
-                word.clear();
-                word.push(c);
-                if c.is_digit(10) {
-                    let digit = c.to_digit(10).unwrap();
-                    if first == 0 {
-                        first = digit
-                    }
-                    last = digit;
-                }
-            }
-            WordNumberStatus::PartialNumber => continue,
-            WordNumberStatus::Number(number) => {
-                if first == 0 {
-                    first = number
-                }
-                last = number;
-                word.clear();
-                word.push(c);
-            }
+fn next_word_is_number(word: &String) -> Option<u32> {
+    for (i, n) in NUMBERS.iter().enumerate() {
+        if word.starts_with(n) {
+            return Some((i + 1) as u32);
         }
     }
+    return None;
+}
 
-    return FirstLast { first, last };
+fn find_first(line: &String) -> Option<u32> {
+    let first_char = line.chars().next();
+    if first_char.is_none() {
+        return None;
+    }
+    if first_char.unwrap().is_numeric() {
+        return first_char.unwrap().to_digit(10);
+    }
+    if next_word_is_number(line).is_some() {
+        return next_word_is_number(line);
+    }
+    return find_first(&line.chars().skip(1).collect::<String>());
+}
+
+fn ends_with_number(word: &String) -> Option<u32> {
+    for (i, n) in NUMBERS.iter().enumerate() {
+        if word.ends_with(n) {
+            return Some((i + 1) as u32);
+        }
+    }
+    None
+}
+
+fn find_last(line: &String) -> Option<u32> {
+    let last_char = line.chars().last();
+    if last_char.is_none() {
+        return None;
+    }
+    if last_char.unwrap().is_numeric() {
+        return last_char.unwrap().to_digit(10);
+    }
+    if ends_with_number(line).is_some() {
+        return ends_with_number(line);
+    }
+    return find_last(&line.chars().take(line.len() - 1).collect::<String>());
 }
 
 #[test]
@@ -161,6 +124,10 @@ fn test_first_and_last_number() {
     assert_eq!(
         first_and_last_number("7pqrstsixteen".to_string()),
         FirstLast { first: 7, last: 6 }
+    );
+    assert_eq!(
+        first_and_last_number("mtqxjrcn1two9fourncghmnbsseight".to_string()),
+        FirstLast { first: 1, last: 8 }
     );
 }
 
