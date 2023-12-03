@@ -13,23 +13,46 @@ fn main() {
         .map(|line| read_game(line))
         .collect::<Vec<Game>>();
 
+    part_one(&games);
+    part_two(&games);
+}
+
+fn part_one(games: &Vec<Game>) {
+    const MAX_GEMS: GemCount = GemCount {
+        green: 13,
+        red: 12,
+        blue: 14,
+    };
     let legal_games = games
         .iter()
         .filter(|game| is_game_legal(game, &MAX_GEMS))
         .collect::<Vec<&Game>>();
-
     let mut legal_games_id_acum = 0;
-
     legal_games.clone().into_iter().for_each(|game| {
         legal_games_id_acum += game.game_id;
     });
-
     println!(
-        "Total games: {}, Legal games: {}. Sum of their IDs {}",
+        "Part 1: Total games: {}, Legal games: {}. Sum of their IDs {}",
         games.len(),
         legal_games.len(),
         legal_games_id_acum
     );
+}
+
+fn part_two(games: &Vec<Game>) {
+    let fewest_gems_per_game = games
+        .iter()
+        .map(|game| fewest_gems_per_game(game))
+        .collect::<Vec<GemCount>>();
+
+    let power_for_each_game = fewest_gems_per_game
+        .iter()
+        .map(|gem_count| gem_count.green * gem_count.red * gem_count.blue)
+        .collect::<Vec<u32>>();
+
+    let sum_of_powers = power_for_each_game.iter().sum::<u32>();
+
+    println!("Part 2: Sum of powers of fewest games: {}", sum_of_powers);
 }
 
 #[derive(Debug, PartialEq)]
@@ -49,6 +72,21 @@ struct GemCount {
     green: u32,
     red: u32,
     blue: u32,
+}
+
+fn fewest_gems_per_game(game: &Game) -> GemCount {
+    let mut fewest_gems = GemCount {
+        green: 0,
+        red: 0,
+        blue: 0,
+    };
+
+    for round in &game.rounds {
+        fewest_gems.red = fewest_gems.red.max(round.red);
+        fewest_gems.green = fewest_gems.green.max(round.green);
+        fewest_gems.blue = fewest_gems.blue.max(round.blue);
+    }
+    return fewest_gems;
 }
 
 #[test]
